@@ -39,7 +39,7 @@ def check_mentions(api, since_id):
             # tweets the status argument as a reply, to the specified tweet id
             logger.info(f"Answering to {tweet.user.name} and posting pic...")
             api.update_status(status=f"Hey {tweet.user.name}. "
-                                     f"I tried to find some faces in the tweet you showed me.",
+                                     f"I tried to find some faces/eyes in the tweet you showed me.",
                               in_reply_to_status_id=tweet.id,
                               auto_populate_reply_metadata=True,
                               media_ids=media_ids
