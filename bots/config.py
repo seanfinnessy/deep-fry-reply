@@ -5,8 +5,11 @@ import wget
 from PIL import Image, ImageOps, ImageEnhance
 import cv2
 from collections import namedtuple
+import numpy as np
 
 logger = logging.getLogger()
+
+#TODO: If media in folder, does not work? Also face_roi_color appears but need to put flares over it.
 
 
 def create_api():
@@ -51,14 +54,19 @@ def download_media(api, tweet):
 
 
 def image_manip(image):
-    # Find faces in image
-    flare_positions = face_detection(image)
-    print(type(flare_positions))
+    face_detection(image)
+
+    """flare_positions, face_roi_color = face_detection(image)
+    face_roi_color = cv2.cvtColor(face_roi_color, cv2.COLOR_BGR2RGB)
+    face_roi_color = Image.fromarray(face_roi_color)
+    face_roi_color.show()
+    print(type(face_roi_color))
     # Open flare as PIL object
-    flare_img = Image.open('C:\\PythonLearning\\TwitterBot\\bots\\flare.png')
+    flare_img = Image.open('C:\\PythonLearning\\TwitterBot\\bots\\flare.png')"""
 
     img = Image.open(image)
     img = img.convert('RGB')
+
     '''# crush image
     width, height = img.width, img.height
     img = img.resize((int(width ** .93), int(height ** .93)), resample=Image.LANCZOS)
@@ -81,7 +89,7 @@ def image_manip(image):
     img = ImageEnhance.Contrast(img).enhance(100.0)
     img = ImageEnhance.Brightness(img).enhance(50.0)
     img = ImageEnhance.Color(img).enhance(50.0)'''
-
+    """
     # Apply flares
     for flare in flare_positions:
         flare_transformed = flare_img.copy().resize((flare.size,) * 2, resample=Image.BILINEAR)
@@ -90,9 +98,9 @@ def image_manip(image):
         face_roi_color = cv2.cvtColor(face_roi_color, cv2.COLOR_BGR2RGB)
         face_roi_color = Image.fromarray(face_roi_color)
         print(type(face_roi_color))'''
-        img.paste(flare_transformed, (flare.x, flare.y), flare_transformed)
+        face_roi_color.paste(flare_transformed, (flare.x, flare.y), flare_transformed)
         print("flared")
-
+    """
     img.save(image, 'JPEG')
 
 
@@ -104,8 +112,8 @@ def face_detection(image):
     # Load classifier and create a cascade object for face detection
     face_cascade = cv2.CascadeClassifier('C:\\PythonLearning\\TwitterBot\\bots\\haarcascade_frontalface_alt.xml')
     eye_cascade = cv2.CascadeClassifier('C:\\PythonLearning\\TwitterBot\\bots\\haarcascade_eye.xml')
-    # detectMultiScale recieves image as an argument and runs the classifier cascade over the image
-    # MultiScale means the algo looks at subregions of the image in multiple scales, to detect faces of diff sizes
+    # detectMultiScale receives image as an argument and runs the classifier cascade over the image
+    # MultiScale means the algorithm looks at sub-regions of the image in multiple scales, to detect faces of diff sizes
     # detected_faces now contains all detections for image.
     detected_faces = face_cascade.detectMultiScale(grayscale_image)
 
@@ -120,28 +128,33 @@ def face_detection(image):
         face_roi_gray = grayscale_image[y:y+height, x:x+width]
         face_roi_color = original_image[y:y+height, x:x+width]
         detected_eyes = eye_cascade.detectMultiScale(face_roi_gray)
-        cv2.rectangle(
-            original_image,
-            (x, y),  # top left
-            (x + width, y + height),  # bottom right
-            (0, 255, 0),
-            2
-        )
+
+        # Must have in order to correct positions of flares. This marks where top left of face is detected.
+        face_x_coord = x
+        face_y_coord = y
 
         for (eye_x, eye_y, eye_width, eye_height) in detected_eyes:
             eye_corner = (eye_x, eye_y)
             flare_size = eye_height if eye_height > eye_width else eye_width
-            flare_size = flare_size * 4
+
+            # the * operator unpacks the eye_corner tuple!
             eye_corner = FlarePosition(*eye_corner, flare_size)
             flare_positions.append(eye_corner)
 
-            cv2.rectangle(
-                face_roi_color,
-                (eye_x, eye_y),  # top left
-                (eye_x + eye_width, eye_y + eye_height),  # bottom right
-                (255, 0, 0),
-                2
-            )
+        # Convert image from array into normal image.
+        original_image = Image.fromarray(original_image)
+
+        # Open flare as PIL object
+        flare_img = Image.open('C:\\PythonLearning\\TwitterBot\\bots\\flare.png')
+        for flare in flare_positions:
+            flare_transformed = flare_img.copy().resize((flare.size,) * 2, resample=Image.BILINEAR)
+            original_image.paste(flare_transformed, (flare.x + face_x_coord, flare.y + face_y_coord), flare_transformed)
+
+        # Convert image back to an array. (needed for cv2).
+        original_image = np.array(original_image)
+
+        cv2.imshow("name", original_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     cv2.imwrite(image, original_image)
-    return flare_positions

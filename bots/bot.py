@@ -35,15 +35,16 @@ def check_mentions(api, since_id):
         if 'media' in api.get_status(tweet.in_reply_to_status_id).entities:
             logger.info("I found media!")
             media_ids = download_media(api, api.get_status(tweet.in_reply_to_status_id))
-
-            # tweets the status argument as a reply, to the specified tweet id
+            print(media_ids)
+            """# tweets the status argument as a reply, to the specified tweet id
             logger.info(f"Answering to {tweet.user.name} and posting pic...")
+            
             api.update_status(status=f"Hey {tweet.user.name}. "
                                      f"I tried to find some faces/eyes in the tweet you showed me.",
                               in_reply_to_status_id=tweet.id,
                               auto_populate_reply_metadata=True,
                               media_ids=media_ids
-                              )
+                              )"""
 
             # delete downloaded media
             if os.path.exists('C:\\PythonLearning\\TwitterBot\\media'):
