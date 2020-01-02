@@ -9,8 +9,6 @@ import numpy as np
 
 logger = logging.getLogger()
 
-#TODO: If media in folder, does not work? Also face_roi_color appears but need to put flares over it.
-
 
 def create_api():
     # Get environment variable
@@ -55,52 +53,31 @@ def download_media(api, tweet):
 
 def image_manip(image):
     face_detection(image)
-
-    """flare_positions, face_roi_color = face_detection(image)
-    face_roi_color = cv2.cvtColor(face_roi_color, cv2.COLOR_BGR2RGB)
-    face_roi_color = Image.fromarray(face_roi_color)
-    face_roi_color.show()
-    print(type(face_roi_color))
-    # Open flare as PIL object
-    flare_img = Image.open('C:\\PythonLearning\\TwitterBot\\bots\\flare.png')"""
-
     img = Image.open(image)
     img = img.convert('RGB')
 
-    '''# crush image
+    # crush image
     width, height = img.width, img.height
-    img = img.resize((int(width ** .93), int(height ** .93)), resample=Image.LANCZOS)
+    """img = img.resize((int(width ** .93), int(height ** .93)), resample=Image.LANCZOS)
     img = img.resize((int(width ** .95), int(height ** .95)), resample=Image.BILINEAR)
     img = img.resize((int(width ** .97), int(height ** .97)), resample=Image.BICUBIC)
-    img = img.resize((width, height), resample=Image.BICUBIC)
-    img = ImageOps.posterize(img, 4)
+    img = img.resize((width, height), resample=Image.BICUBIC)"""
+    img = ImageOps.posterize(img, 7)
 
     # color overlay
     r = img.split()[0]
-    logger.info(img.split()[0])
     r = ImageEnhance.Contrast(r).enhance(2.0)
     r = ImageEnhance.Brightness(r).enhance(1.5)
-    r = ImageOps.colorize(r, [254, 0, 2], [255, 255, 15])
+    r = ImageOps.colorize(r, [65, 0, 126], [255, 118, 0])
 
     # overlay red and yellow onto main image and sharpen
-    # img = Image.blend(img, r, 0.75)
+    img = Image.blend(img, r, 0.75)
 
     img = ImageEnhance.Sharpness(img).enhance(200.0)
-    img = ImageEnhance.Contrast(img).enhance(100.0)
-    img = ImageEnhance.Brightness(img).enhance(50.0)
-    img = ImageEnhance.Color(img).enhance(50.0)'''
-    """
-    # Apply flares
-    for flare in flare_positions:
-        flare_transformed = flare_img.copy().resize((flare.size,) * 2, resample=Image.BILINEAR)
-        '''  original_image_arr = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
-        original_image = Image.fromarray(original_image_arr)
-        face_roi_color = cv2.cvtColor(face_roi_color, cv2.COLOR_BGR2RGB)
-        face_roi_color = Image.fromarray(face_roi_color)
-        print(type(face_roi_color))'''
-        face_roi_color.paste(flare_transformed, (flare.x, flare.y), flare_transformed)
-        print("flared")
-    """
+    """img = ImageEnhance.Contrast(img).enhance(100.0)
+    img = ImageEnhance.Color(img).enhance(50.0)"""
+
+    img.show()
     img.save(image, 'JPEG')
 
 
@@ -152,9 +129,5 @@ def face_detection(image):
 
         # Convert image back to an array. (needed for cv2).
         original_image = np.array(original_image)
-
-        cv2.imshow("name", original_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
 
     cv2.imwrite(image, original_image)
